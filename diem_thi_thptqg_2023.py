@@ -1,5 +1,13 @@
 import requests
 from bs4 import BeautifulSoup
+import multiprocessing
+
+short_path = 'D:/Download/'
+# file will be created in the short_path folder
+filename = 'scores.csv'
+path = short_path + filename 
+header_scores = 'sbd,toan,ngu_van,ngoai_ngu,vat_li,hoa_hoc,sinh_hoc,lich_su,dia_li,gdcd'
+
 
 # Get scores from: https://tienphong.vn/tra-cuu-scores-thi.tpo
 def get_scores_tienphong(sbd):
@@ -47,6 +55,7 @@ def get_scores_thptquocgia(sbd):
         return ''
     except Exception as e:
         return 'error'
+
 # Combine 3 websites
 def get_scores(sbd):
     if sbd < 10000000:
@@ -63,14 +72,40 @@ def get_scores(sbd):
     return scores
 
 # Collect and write data to csv file
-path = r'D:\Download\scores.csv'
-header_scores = 'sbd,toan,ngu_van,ngoai_ngu,vat_li,hoa_hoc,sinh_hoc,lich_su,dia_li,gdcd'
-with open(path, 'w') as thptqg:
-    thptqg.write(header_scores + '\n')
-    for ma_tinh in range(1,65):
-        for sbd in range(ma_tinh * 1000000 + 1, (ma_tinh + 1) * 1000000):
-            scores = get_scores(sbd)
-            if scores == '':
-                break
-            else:
-                thptqg.write(scores + '\n')
+def crawlToCsv(city_start, city_end = None):
+    if city_end is None:
+        city_end = city_start
+        city_start = 1
+    if city_start == 20 or city_end == 20:
+        print('Mã tỉnh 20 không tồn tại')
+    elif 1 <= city_end <= 64:
+        with open(path, 'w') as thptqg:
+            thptqg.write(header_scores + '\n')
+            for ma_tinh in range(city_start, city_end + 1):
+                if ma_tinh == 20:
+                    print('Mã tỉnh 20 không tồn tại')
+                    continue
+                for sbd in range(ma_tinh * 1000000 + 1, (ma_tinh + 1) * 1000000):
+                    scores = get_scores(sbd)
+                    if scores == '':
+                        break
+                    else:
+                        thptqg.write(scores + '\n')
+    else:
+        print('Mã tỉnh không hợp lệ')
+
+# Using multiprocessing library to crawl scores and write to csv file
+if __name__ == "__main__":
+    num_processes = multiprocessing.cpu_count()
+    num_cities = 64
+    city_per_process = num_cities // num_processes
+    processes = list()
+    for i in range(num_processes):
+        city_start = i * num_processes + 1
+        city_end = (i + 1) * num_processes if i + 1 < num_processes else num_cities
+        process = multiprocessing.Process(target=crawlToCsv, args=(city_start, city_end + 1))
+        processes.append(process)
+        process.start()
+    for process in processes:
+        process.join()
+        print(f'Done {process}')
