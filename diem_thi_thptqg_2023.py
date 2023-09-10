@@ -3,11 +3,10 @@ from bs4 import BeautifulSoup
 import multiprocessing
 
 short_path = 'D:/Download/'
-# file will be created in the short_path folder
+# File will be created in the short_path folder
 filename = 'scores.csv'
 path = short_path + filename 
 header_scores = 'sbd,toan,ngu_van,ngoai_ngu,vat_li,hoa_hoc,sinh_hoc,lich_su,dia_li,gdcd'
-
 
 # Get scores from: https://tienphong.vn/tra-cuu-scores-thi.tpo
 def get_scores_tienphong(sbd):
